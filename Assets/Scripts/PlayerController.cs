@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     private void HandleVerticalMovement()
     {
         forwardInput = Input.GetAxis("Vertical");
+        forwardInput = Mathf.Clamp01(forwardInput);
         transform.Translate(Vector3.forward * Time.deltaTime * speed * forwardInput);
     }
 
@@ -51,7 +52,7 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator SpawnRoad(Vector3 pos)
     {
-        yield return new WaitUntil(() => Vector3.Distance(transform.position, pos) > 50f);
+        yield return new WaitUntil(() => Vector3.Distance(transform.position, pos) > 10f);
         spawnManager.SpawnTriggerEntered();
         count = 0;
     }
