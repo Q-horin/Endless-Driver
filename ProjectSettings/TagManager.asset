@@ -42,3 +42,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Player
+    uniqueID: 1771723121
+    locked: 0
+  - name: City
+    uniqueID: 768259501
+    locked: 0
+  - name: Background
+    uniqueID: 2356237157
+    locked: 0

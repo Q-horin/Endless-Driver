@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,24 +6,74 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] SpawnManager spawnManager;
-    [SerializeField] float speed = 20f;
+    [SerializeField] float maxVelocity = 20f;
     [SerializeField] float turnSpeed = 5f;
+    [SerializeField] float decelerationRate = 50f;
+    [SerializeField] float accelerationRate = 10f;
+    float initialVelocity = 0f;
+    float currentVelocity;
+
     float horizontalInput;
     float forwardInput;
     bool insideTrigger;
     int count = 0;
+    AudioPlayer audioPlayer;
+    bool engineStarted;
+
+    void Awake()
+    {
+        audioPlayer = FindObjectOfType<AudioPlayer>();
+    }
 
     void Update()
     {
+        HandleMainTheme();
+        HandleHornEvent();
         HandleVerticalMovement();
-        HandleHorizontalRotation();
+        //HandleHorizontalRotation();
+    }
+
+    private void HandleMainTheme()
+    {
+        if (!engineStarted && (Input.GetAxis("Vertical") == 1))
+        {
+            audioPlayer.StartMusicAndSounds();
+            engineStarted = true;
+        }
+    }
+
+    private void HandleHornEvent()
+    {
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            audioPlayer.StopClips();
+            audioPlayer.PlayHornClip();
+        }
     }
 
     private void HandleVerticalMovement()
     {
+        if (!engineStarted && !audioPlayer.HasEnginSoundEnded()){return;}
+
         forwardInput = Input.GetAxis("Vertical");
         forwardInput = Mathf.Clamp01(forwardInput);
-        transform.Translate(Vector3.forward * Time.deltaTime * speed * forwardInput);
+        if ( forwardInput == 1)
+        {   
+            currentVelocity = currentVelocity + (accelerationRate * Time.deltaTime);
+            currentVelocity = Mathf.Clamp(currentVelocity, initialVelocity, maxVelocity);
+            transform.Translate(Vector3.forward * currentVelocity * forwardInput);
+        }
+        else
+        {
+            currentVelocity = currentVelocity - (decelerationRate * Time.deltaTime);
+            currentVelocity = Mathf.Clamp(currentVelocity, initialVelocity, maxVelocity);
+            if(currentVelocity > 0) {
+                transform.Translate(0, 0, currentVelocity);
+            }
+            else {
+                transform.Translate(0, 0, 0);
+            }
+        }    
     }
 
     private void HandleHorizontalRotation()
@@ -30,7 +81,6 @@ public class PlayerController : MonoBehaviour
         horizontalInput = Input.GetAxis("Horizontal");
         transform.Rotate(Vector3.up, Time.deltaTime * turnSpeed * horizontalInput);
     }
-
 
     private void OnTriggerEnter(Collider other) 
     {
