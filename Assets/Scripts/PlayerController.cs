@@ -6,39 +6,35 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] SpawnManager spawnManager;
-    [SerializeField] float maxVelocity = 20f;
-    [SerializeField] float turnSpeed = 5f;
-    [SerializeField] float decelerationRate = 50f;
-    [SerializeField] float accelerationRate = 10f;
-    float initialVelocity = 0f;
-    float currentVelocity;
-
-    float horizontalInput;
-    float forwardInput;
+    Van van;
     bool insideTrigger;
     int count = 0;
     AudioPlayer audioPlayer;
-    bool engineStarted;
+    bool mainThemeHasStarted;
+    bool hasBeenExited;
 
     void Awake()
     {
         audioPlayer = FindObjectOfType<AudioPlayer>();
+        van = GetComponent<Van>();
     }
 
     void Update()
     {
+        if (!van.CanMove() && audioPlayer.HasEnginSoundEnded())
+        {
+            van.SetCanMove(true);
+        }
         HandleMainTheme();
         HandleHornEvent();
-        HandleVerticalMovement();
-        //HandleHorizontalRotation();
     }
 
     private void HandleMainTheme()
     {
-        if (!engineStarted && (Input.GetAxis("Vertical") == 1))
+        if (!mainThemeHasStarted && van.IsEngineStarted())
         {
             audioPlayer.StartMusicAndSounds();
-            engineStarted = true;
+            mainThemeHasStarted = true;
         }
     }
 
@@ -51,37 +47,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleVerticalMovement()
-    {
-        if (!engineStarted && !audioPlayer.HasEnginSoundEnded()){return;}
-
-        forwardInput = Input.GetAxis("Vertical");
-        forwardInput = Mathf.Clamp01(forwardInput);
-        if ( forwardInput == 1)
-        {   
-            currentVelocity = currentVelocity + (accelerationRate * Time.deltaTime);
-            currentVelocity = Mathf.Clamp(currentVelocity, initialVelocity, maxVelocity);
-            transform.Translate(Vector3.forward * currentVelocity * forwardInput);
-        }
-        else
-        {
-            currentVelocity = currentVelocity - (decelerationRate * Time.deltaTime);
-            currentVelocity = Mathf.Clamp(currentVelocity, initialVelocity, maxVelocity);
-            if(currentVelocity > 0) {
-                transform.Translate(0, 0, currentVelocity);
-            }
-            else {
-                transform.Translate(0, 0, 0);
-            }
-        }    
-    }
-
-    private void HandleHorizontalRotation()
-    {
-        horizontalInput = Input.GetAxis("Horizontal");
-        transform.Rotate(Vector3.up, Time.deltaTime * turnSpeed * horizontalInput);
-    }
-
     private void OnTriggerEnter(Collider other) 
     {
         if (other.gameObject.CompareTag("SpawnTrigger"))
@@ -92,17 +57,21 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerExit(Collider other) 
     {
-        if (insideTrigger && count < 1)
+        if (insideTrigger && count < 1 && !hasBeenExited)
         {
         insideTrigger = false;
+        Debug.Log("yupi");
         StartCoroutine(SpawnRoad(other.transform.position));
         count++;
+        hasBeenExited = true;
         }
     }
 
     IEnumerator SpawnRoad(Vector3 pos)
     {
-        yield return new WaitUntil(() => Vector3.Distance(transform.position, pos) > 10f);
+        yield return new WaitUntil(() => Vector3.Distance(transform.position, pos) > 25f);
+        Debug.Log("Actual shit running");
+        hasBeenExited = false;
         spawnManager.SpawnTriggerEntered();
         count = 0;
     }
